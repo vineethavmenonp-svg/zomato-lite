@@ -3,15 +3,21 @@
 // THE RULE: there is no arithmetic in this file. It receives 4.3 and prints 4.3.
 
 import Link from "next/link";
+import { headers } from "next/headers";
 
 type Review = { id: number; rating: number; comment: string; createdAt: string };
 
 async function getRestaurantPage(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/restaurants/${id}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return (await res.json()) as {
+  // Build the API address from the request itself: on Vercel the host is the live
+  // domain, on your laptop it is localhost:3000 — the page works on both.
+  const host = (await headers()).get("host") ?? "localhost:3000";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  try {
+    const res = await fetch(`${protocol}://${host}/api/restaurants/${id}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as {
     name: string;
     cuisine: string;
     area: string;
@@ -19,7 +25,10 @@ async function getRestaurantPage(id: string) {
     totalReviews: number;
     latestReview: Review | null;
     reviews: Review[];
-  };
+    };
+  } catch {
+    return null;
+  }
 }
 
 function formatDate(iso: string) {
