@@ -20,7 +20,7 @@ export type Review = {
 
 export async function restaurantExists(id: number): Promise<boolean> {
   const res = await pool.query("SELECT 1 FROM restaurants WHERE id = $1", [id]);
-  return res.rowCount > 0;
+  return (res.rowCount ?? 0) > 0;
 }
 
 export async function getRestaurant(id: number): Promise<Restaurant | null> {
