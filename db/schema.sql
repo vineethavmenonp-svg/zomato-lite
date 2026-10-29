@@ -10,7 +10,8 @@ CREATE TABLE restaurants (
   id        SERIAL PRIMARY KEY,
   name      TEXT NOT NULL,
   cuisine   TEXT NOT NULL,
-  area      TEXT NOT NULL
+  area      TEXT NOT NULL,
+  image     TEXT
 );
 
 CREATE TABLE reviews (
@@ -18,5 +19,8 @@ CREATE TABLE reviews (
   restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
   rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment       TEXT NOT NULL,
+  -- Optional topic tags ("Food", "Service"...): FACTS the reviewer ticked.
+  -- Counts of these are computed at request time; topics are NOT sentiment.
+  topics        JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

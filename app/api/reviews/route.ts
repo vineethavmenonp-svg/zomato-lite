@@ -2,11 +2,12 @@
 // All logic lives here (the kitchen), never in the React code (the dining area).
 
 import { insertReview, restaurantExists } from "@/db/store";
+import { normalizeTopics } from "@/lib/topics";
 
 export async function POST(request: Request) {
   // The backend never trusts the frontend: anyone can call this API directly,
   // so we re-check everything the star picker "already" limited.
-  let body: { restaurantId?: unknown; rating?: unknown; comment?: unknown };
+  let body: { restaurantId?: unknown; rating?: unknown; comment?: unknown; topics?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -33,7 +34,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "That restaurant does not exist" }, { status: 400 });
   }
 
+  // Check 4: topics are OPTIONAL facts. When present they must all be names we
+  // know — they get stored as-is and count as "mentions", never as sentiment.
+  const normalized = normalizeTopics(body.topics);
+  if (!normalized.ok) {
+    return Response.json({ error: normalized.error }, { status: 400 });
+  }
+
   // All checks passed: write exactly ONE row of fact. Nothing else changes.
-  const reviewId = await insertReview(restaurantId, rating, comment);
+  const reviewId = await insertReview(restaurantId, rating, comment, normalized.topics);
   return Response.json({ success: true, reviewId }, { status: 201 });
 }
