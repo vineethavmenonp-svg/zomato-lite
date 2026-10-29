@@ -135,8 +135,6 @@ export async function getRestaurantPage(id: number, topic: string | null = null)
   // When a topic filter is active, only matching reviews go in the list.
   const listed = topic ? allReviews.filter((r) => r.topics.includes(topic)) : allReviews;
 
-  const [latestReview, ...olderReviews] = listed;
-
   return {
     id: restaurant.id, // so "Write a Review" opens THIS restaurant, not a hardcoded one
     name: restaurant.name,
@@ -147,9 +145,8 @@ export async function getRestaurantPage(id: number, topic: string | null = null)
     totalReviews, // always all reviews, filter or not
     reviewsWithoutCategories,
     topicCounts,
-    // All mode: latest + earlier split, as before. Topic filter: one list of
-    // every review that mentions the topic (its latest is just first in line).
-    latestReview: topic ? null : (latestReview ?? null),
-    reviews: topic ? listed : olderReviews,
+    // One consistent list, newest first (already ORDER BY created_at DESC;
+    // under a topic filter it is the matching subset in the same order).
+    reviews: listed,
   };
 }

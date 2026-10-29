@@ -1,9 +1,11 @@
 // Page 1 — Restaurant and reviews.
 // Display layer: calls the API and prints what it was handed. No maths in this file.
-// Structure: wordmark bar → white card (photo, name, rating badge, chips) →
-// Topic mention chips (with "All" filter + a line clarifying counts ≠ sentiment) →
-// Latest review card → Earlier reviews cards → Write a Review button.
-// ?topic=Food in the URL swaps the LATEST/EARLIER split for a single filtered list.
+// Structure: wordmark bar → white card (photo, name, location, cuisine, and a
+// ★ rating · N reviews line with "Write a review" beside it) → Reviews heading
+// with compact filter pills beneath it (no counts; selected filter highlighted;
+// zero-count categories hidden, All always shown) → one consistent review list,
+// newest first. ?topic=Food in the URL narrows the list; the headline rating
+// is always over ALL reviews.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -22,7 +24,6 @@ type Overview = {
   totalReviews: number;
   reviewsWithoutCategories: number;
   topicCounts: Record<Topic, number>;
-  latestReview: Review | null;
   reviews: Review[];
 };
 
@@ -137,7 +138,8 @@ export default async function RestaurantPage({
           </Link>
         </div>
 
-        {/* Banner card: photograph, then name, average badge and cuisine chips */}
+        {/* Banner card: photograph, then name, location, cuisine, and the
+            overall rating line with "Write a review" right beside it. */}
         <section className="mt-4 overflow-hidden rounded-2xl bg-white">
           {/* Banner: this restaurant's own image from the database, wide crop
               (object-cover + fixed height gives every photo the same banner shape) */}
@@ -153,121 +155,92 @@ export default async function RestaurantPage({
             sizes="(max-width: 480px) 100vw, 430px"
             className="h-[240px] w-full object-cover"
           />
-          <div className="px-6 pb-6 pt-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-[18px] font-semibold tracking-tight text-[#0F172A]">
-                  {restaurant.name}
-                </h1>
-                <p className="mt-0.5 text-[13px] text-[#6B7280]">{restaurant.area}</p>
-                <div className="mt-3 flex gap-2">
-                  <span className="rounded-md bg-[#F1EFEB] px-3 py-1 text-sm text-[#6B7280]">
-                    {restaurant.cuisine}
+          <div className="px-6 pb-5 pt-4">
+            <h1 className="text-[18px] font-semibold tracking-tight text-[#0F172A]">
+              {restaurant.name}
+            </h1>
+            <p className="mt-0.5 text-[13px] text-[#6B7280]">{restaurant.area}</p>
+            <span className="mt-2.5 inline-block rounded-md bg-[#F1EFEB] px-3 py-1 text-sm text-[#6B7280]">
+              {restaurant.cuisine}
+            </span>
+            {/* Overall rating + total as one line of real data, and the primary
+                action directly beside it. Averages are ALWAYS over all reviews. */}
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              {restaurant.averageRating === null ? (
+                <p className="text-[15px] font-medium text-[#6B7280]">No ratings yet</p>
+              ) : (
+                <p className="items-baseline text-[15px]">
+                  <span className="text-[#F5A623]" aria-hidden="true">★</span>{" "}
+                  <span className="font-semibold text-[#0F172A]">{restaurant.averageRating}</span>
+                  <span className="text-[#9CA3AF]"> · </span>
+                  <span className="font-medium text-[#6B7280]">
+                    {restaurant.totalReviews} review{restaurant.totalReviews === 1 ? "" : "s"}
                   </span>
-                  <span className="rounded-md bg-[#F1EFEB] px-3 py-1 text-sm text-[#6B7280]">
-                    Dine-in
-                  </span>
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                {restaurant.averageRating === null ? (
-                  <span className="text-xl font-bold text-[#d6d3d1]">—</span>
-                ) : (
-                  <span className="inline-flex items-baseline">
-                    <span className="rounded-lg bg-[#15803D] px-2.5 py-1.5 text-xl font-bold text-white">
-                      {restaurant.averageRating}
-                    </span>
-                    <span className="ml-1 text-[15px] font-semibold text-[#6B7280]">/5</span>
-                  </span>
-                )}
-                <p className="mt-1.5 text-[12px] text-[#6B7280]">
-                  Based on {restaurant.totalReviews} review{restaurant.totalReviews === 1 ? "" : "s"}
                 </p>
-              </div>
+              )}
+              <Link
+                href={`/review/${restaurant.id}`}
+                className="rounded-lg bg-[#D92D2A] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#B42318]"
+              >
+                Write a review
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* Review categories: counts + filters. Deliberately labelled as tagged
-            reviews, not sentiment — a category chip says how many reviews carry
-            that tag, good reviews and bad reviews count equally. */}
-        <section className="mt-4 rounded-2xl bg-white px-5 py-4">
-          <p className="text-[11px] font-semibold tracking-[0.15em] text-[#6B7280]">
-            REVIEW CATEGORIES
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+        {/* Reviews: heading, compact filter pills (counts removed — the number
+            a review carries is on its card), then one consistent list, newest
+            first. Zero-count categories stay hidden; "All" is always shown. */}
+        <section className="mt-6">
+          <h2 className="text-[15px] font-semibold tracking-tight text-[#0F172A]">Reviews</h2>
+          <div className="mt-2.5 flex flex-wrap gap-2">
             <Link
               href={`/restaurant/${restaurant.id}`}
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
                 topic === null ? "bg-[#24292E] text-white" : "bg-[#F1EFEB] text-[#24292E] hover:bg-[#E7E2DA]"
               }`}
             >
-              All · {restaurant.totalReviews}
+              All
             </Link>
-            {TOPICS.map((t) => (
-              <Link
-                key={t}
-                href={`/restaurant/${restaurant.id}?topic=${t}`}
-                className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
-                  topic === t
-                    ? "bg-[#24292E] text-white"
-                    : restaurant.topicCounts[t] > 0
-                      ? "bg-[#F1EFEB] text-[#24292E] hover:bg-[#E7E2DA]"
-                      : "bg-transparent text-[#9CA3AF] ring-1 ring-inset ring-[#ECE8E2]"
-                }`}
-              >
-                {t} · {restaurant.topicCounts[t]}
-              </Link>
-            ))}
+            {TOPICS.map((t) =>
+              restaurant.topicCounts[t] > 0 || topic === t ? (
+                <Link
+                  key={t}
+                  href={`/restaurant/${restaurant.id}?topic=${t}`}
+                  className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                    topic === t
+                      ? "bg-[#24292E] text-white"
+                      : "bg-[#F1EFEB] text-[#24292E] hover:bg-[#E7E2DA]"
+                  }`}
+                >
+                  {t}
+                </Link>
+              ) : null,
+            )}
           </div>
-          <p className="mt-3 text-[12px] leading-5 text-[#9CA3AF]">
-            Filter reviews by category. A review can have more than one category.
-          </p>
-          <p className="mt-1 text-[12px] leading-5 text-[#9CA3AF]">
-            Counts show how many reviews are tagged with each category — not whether reviewers liked it.
-          </p>
           {restaurant.reviewsWithoutCategories > 0 && (
-            <p className="mt-1 text-[12px] leading-5 text-[#9CA3AF]">
+            <p className="mt-2 text-[12px] leading-5 text-[#9CA3AF]">
               Some reviews don&apos;t have categories yet.
             </p>
           )}
-        </section>
-
-        {/* Latest review — only in unfiltered view (a filter shows the matching list instead) */}
-        {!topic && restaurant.latestReview && (
-          <section>
-            <p className="mt-6 text-[11px] font-semibold tracking-[0.15em] text-[#6B7280]">
-              LATEST REVIEW
+          {topic && (
+            <p className="mt-3 text-[14px] font-medium text-[#6B7280]">
+              {restaurant.reviews.length} review{restaurant.reviews.length === 1 ? "" : "s"} about{" "}
+              {topic.toLowerCase()}
             </p>
-            <div className="mt-2 rounded-2xl border-l-4 border-[#15803D] bg-white px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-[#E7F4EA] px-2 py-0.5 text-xs font-bold tracking-wide text-[#15803D]">
-                    LATEST
-                  </span>
-                  <RatingBadge rating={restaurant.latestReview.rating} />
-                </div>
-                <span className="text-sm text-[#9CA3AF]">
-                  {timeAgo(restaurant.latestReview.createdAt)}
-                </span>
-              </div>
-              <p className="mt-3 text-[15px] leading-7">{restaurant.latestReview.comment}</p>
-              <TopicTags topics={restaurant.latestReview.topics} />
-            </div>
-          </section>
-        )}
+          )}
 
-        {/* Earlier reviews, or — under a topic filter — every review mentioning it */}
-        <section>
-          <p className="mt-6 text-[11px] font-semibold tracking-[0.15em] text-[#6B7280]">
-            {topic ? `REVIEWS TAGGED ${topic.toUpperCase()}` : "EARLIER REVIEWS"}
-          </p>
-          {restaurant.reviews.length === 0 && topic ? (
-            <div className="mt-2 rounded-2xl border border-dashed border-[#d6d3d1] bg-white px-5 py-6 text-center text-[14px] text-[#6B7280]">
-              No reviews mention {topic} yet. Try another topic.
+          {/* One list, newest first — same card for every review, filter or not */}
+          {restaurant.reviews.length === 0 ? (
+            <div className="mt-3 rounded-2xl border border-dashed border-[#d6d3d1] bg-white px-5 py-6 text-center text-[14px] text-[#6B7280]">
+              {topic ? (
+                <>No reviews about {topic.toLowerCase()} yet. Try another category.</>
+              ) : (
+                <>No ratings yet. Be the first to review {restaurant.name}.</>
+              )}
             </div>
-          ) : restaurant.reviews.length > 0 ? (
-            <div className="mt-2 space-y-3">
+          ) : (
+            <div className="mt-3 space-y-3">
               {restaurant.reviews.map((review: Review) => (
                 <div key={review.id} className="rounded-2xl bg-white px-5 py-4">
                   <div className="flex items-center justify-between">
@@ -279,26 +252,13 @@ export default async function RestaurantPage({
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
         </section>
 
-        {/* Empty state inviting the first review */}
-        {restaurant.totalReviews === 0 && (
-          <div className="mt-10 rounded-2xl border border-dashed border-[#d6d3d1] p-8 text-center">
-            <p className="text-[15px] font-medium">No ratings yet</p>
-            <p className="mt-1 text-[15px] text-[#6B7280]">
-              Be the first to review {restaurant.name}.
-            </p>
-          </div>
-        )}
-
-        {/* Tomato-red primary action → review form for THIS restaurant */}
-        <Link
-          href={`/review/${restaurant.id}`}
-          className="mt-6 block w-full rounded-xl bg-[#D92D2A] px-5 py-4 text-center text-[17px] font-semibold text-white hover:bg-[#B42318]"
-        >
-          Write a Review
-        </Link>
+        {/* Subtle footer */}
+        <p className="mt-10 text-center text-[11px] text-[#A8A29E]">
+          Learning project · Sample restaurants and reviews
+        </p>
       </div>
     </main>
   );

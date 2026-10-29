@@ -192,11 +192,12 @@ export default function ReviewPage({ params }: { params: Promise<{ restaurantId:
             {comment.length}/{MAX_COMMENT}
           </p>
 
-          {/* Topics — optional, editable selections. Auto suggestions pre-tick
-              from the words typed (dashed ring while they are only suggestions);
-              the reviewer can untick/retick anything; dismissals are respected. */}
+          {/* Categories — optional, editable selections. Order of the form:
+              rating → review → suggested categories → submit. Auto suggestions
+              pre-tick from the words typed (dashed ring while they are only
+              suggestions); manual picks and removals are respected. */}
           <p className="mt-6 text-[15px] font-semibold">
-            Topics <span className="text-[12px] font-normal text-[#9CA3AF]">(optional)</span>
+            Suggested categories <span className="text-[12px] font-normal text-[#9CA3AF]">(optional)</span>
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {TOPICS.map((t) => {
@@ -229,8 +230,7 @@ export default function ReviewPage({ params }: { params: Promise<{ restaurantId:
             </p>
           )}
           <p className="mt-2 text-[12px] leading-5 text-[#9CA3AF]">
-            Categories spotted in your words are pre-ticked — untick any you disagree with, or leave all empty.
-            Counts on the restaurant page show mentions, not whether people liked it.
+            You can change these.
           </p>
 
           {error && <p className="mt-3 text-[15px] text-[#B42318]">{error}</p>}
@@ -247,6 +247,11 @@ export default function ReviewPage({ params }: { params: Promise<{ restaurantId:
             {submitting ? "Submitting…" : "Submit Review"}
           </button>
         </section>
+
+        {/* Subtle footer */}
+        <p className="mt-8 text-center text-[11px] text-[#A8A29E]">
+          Learning project · Sample restaurants and reviews
+        </p>
       </div>
     </main>
   );

@@ -95,8 +95,8 @@ export default async function Homepage() {
           )}
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-[#9CA3AF]">
-          Demo app · Fictional restaurants shown for learning purposes
+        <p className="mt-6 text-center text-[11px] text-[#A8A29E]">
+          Learning project · Sample restaurants and reviews
         </p>
       </div>
     </main>
