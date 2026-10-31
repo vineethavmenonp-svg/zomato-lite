@@ -23,14 +23,51 @@ export const KEYWORD_TOPICS = ["Food", "Service", "Ambience", "Value"] as const;
 
 // Keywords that hint a topic from free text. Deliberately broad food words:
 // this feeds a SUGGESTION whose checkbox the reviewer can edit or ignore.
+//
+// Matching (in matchesWord below) is case-insensitive, WHOLE-WORD with common
+// inflection suffixes (s/es/ed/ing/'s):
+//   - "Halwa"/"HALWA"/"halwa!"/"two halwas" all hit
+//   - but unrelated words never match: "tea" ≠ team/teach/tear, "pav" ≠ shampoo
+// Reviewer-chosen wording with irregular endings (veggies, patties, waiting,
+// waited, waiter) is listed explicitly. Biryani and its spellings
+// (biriyani/biriani) are separate entries — spellings aren't a suffix away.
 export const TOPIC_KEYWORDS: Record<Topic, string[]> = {
   Food: [
-    "food", "paneer", "pav", "bhaji", "tikki", "pizza", "margherita", "crust",
-    "wrap", "roll", "paratha", "gravy", "dessert", "coffee", "chutney",
-    "filling", "toppings", "masala", "roti", "bread", "garlic", "spicy",
-    "soggy", "burnt", "tasty", "delicious", "tasted", "flavour", "flavor",
-    "sauce", "crunchy", "juicy", "tender", "bite", "chicken", "taste",
-    "bland", "undercooked",
+    // general food words
+    "food", "meal", "dish", "menu item", "bite",
+    "tasty", "delicious", "tasted", "taste", "flavour", "flavor",
+    "flavourful", "flavorful", "yummy", "scrumptious", "appetizing",
+    // cooking problems / textures
+    "spicy", "soggy", "burnt", "bland", "undercooked", "overcooked",
+    "oily", "greasy", "stale", "raw", "rubbery", "chewy",
+    "crunchy", "crispy", "crusty", "juicy", "tender",
+    // Indian mains & street classics (with base forms; suffixes cover plurals)
+    "biryani", "biriyani", "biriani", "pulao", "pulav", "curry", "korma",
+    "tikka", "tandoori", "tandoor", "kebab", "kabab", "kofta",
+    "paneer", "pav", "bhaji", "misal", "tikki", "chaat", "samosa",
+    "pakora", "pakoda", "vada", "dosa", "idli", "sambar", "sambhar",
+    "rasam", "upma", "poha", "thali", "dal", "dhal", "chole", "chana",
+    "rajma", "makhani", "naan", "kulcha", "paratha", "puri", "poori",
+    "roti", "papad", "pickle", "achar", "momo", "shawarma", "falafel",
+    "hummus", "pita", "salan", "saag", "palak",
+    // restaurant / western mains
+    "pizza", "margherita", "burger", "patty", "sandwich", "wrap", "roll",
+    "pasta", "macaroni", "macroni", "noodles", "ramen", "sushi", "fries",
+    "rice", "gravy", "sauce", "chutney", "masala", "filling", "toppings",
+    "crust", "cheese", "cheesy", "butter", "garlic", "bread",
+    // ingredients & veg words (vegetables/veggies listed: irregular endings)
+    "veggies", "vegetable", "vegan", "carrot", "potato", "aloo", "onion",
+    "tomato", "mushroom", "cauliflower", "cabbage", "spinach", "coriander",
+    "chicken", "mutton", "prawn", "fish", "egg",
+    // desserts & sweets
+    "dessert", "sweets", "custard", "cake", "pastry", "brownie", "cookie",
+    "muffin", "halwa", "kheer", "kulfi", "jalebi", "rasgulla", "rosogolla",
+    "jamun", "falooda", "laddu", "laddoo", "ladoo", "shrikhand",
+    // drinks
+    "coffee", "tea", "chai", "lassi", "juice", "lemonade", "smoothie",
+    "mojito", "latte", "cappuccino", "espresso", "buttermilk",
+    // courses / other
+    "soup", "appetizer", "starter", "salad",
   ],
   Service: [
     "service", "staff", "waiter", "wait", "waiting", "slow", "polite",
@@ -52,7 +89,10 @@ export const TOPIC_KEYWORDS: Record<Topic, string[]> = {
 // own, so shorter single words can stay strict (e.g. "quick" alone is too
 // ambiguous, but "quick service" is clear).
 export const TOPIC_PHRASES: Record<Topic, string[]> = {
-  Food: ["must try", "tasted great", "food was"],
+  Food: [
+    "must try", "tasted great", "food was", "ice cream", "fried rice",
+    "main course", "sweet dish", "gulab jamun",
+  ],
   Service: [
     "long wait", "long waits", "long queue", "friendly staff", "helpful staff",
     "quick service", "slow service", "great service", "poor service",
@@ -69,11 +109,15 @@ export const TOPIC_PHRASES: Record<Topic, string[]> = {
   Others: [],
 };
 
-// Word-start anchored match: \bwait hits "waited"/"waiter", and \bpav does not
-// hit "shampoo"-style accidents. Escaped so punctuation in phrases is inert.
+// Whole-word match with common inflection suffixes: case-insensitive, and the
+// rule may end in s/es/ed/ing/'s — so "wait" hits "waiting", "halwa" hits
+// "halwas", "taste" hits "tasted" — but NOT inside unrelated words: "tea" never
+// matches "team"/"teach", "pav" never matches "shampoo", "roll" never
+// matches "rolling". Words with irregular endings (veggies, patties, waited)
+// are listed explicitly in the vocabulary. Escaping keeps punctuation inert.
 function matchesWord(text: string, rule: string): boolean {
   const escaped = rule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`\\b${escaped}`, "i").test(text);
+  return new RegExp(`\\b${escaped}(?:s|es|ed|ing|'s)?\\b`, "i").test(text);
 }
 
 // Topics found in a piece of text (single words + common phrases).
